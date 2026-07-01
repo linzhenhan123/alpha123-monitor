@@ -2,50 +2,60 @@ import requests
 import hashlib
 import json
 import os
-from notify import push
-from config import URL
+import notify
 
-DATA_FILE = "data.json"
+URL = "https://alpha123.uk/zh/"
+STATE_FILE = "state.json"
 
 
-def get_html():
-    headers = {"User-Agent": "Mozilla/5.0"}
-    r = requests.get(URL, headers=headers, timeout=20)
+def get_content():
+    headers = {
+        "User-Agent": "Mozilla/5.0"
+    }
+    r = requests.get(URL, headers=headers, timeout=10)
     return r.text
 
 
+def get_hash(text):
+    return hashlib.md5(text.encode('utf-8')).hexdigest()
+
+
 def load_old():
-    if not os.path.exists(DATA_FILE):
-        return ""
-    with open(DATA_FILE, "r") as f:
-        return json.load(f).get("md5", "")
+    if not os.path.exists(STATE_FILE):
+        return None
+    with open(STATE_FILE, "r") as f:
+        return json.load(f)
 
 
-def save(md5):
-    with open(DATA_FILE, "w") as f:
-        json.dump({"md5": md5}, f)
+def save_new(hash_value):
+    with open(STATE_FILE, "w") as f:
+        json.dump({"hash": hash_value}, f)
 
 
 def main():
-    html = get_html()
-    md5 = hashlib.md5(html.encode()).hexdigest()
+    print("=== monitor start ===")
 
-    old_md5 = load_old()
+    content = get_content()
+    new_hash = get_hash(content)
 
-    if old_md5 == "":
-        save(md5)
-        print("初始化完成")
+    old = load_old()
+
+    if old is None:
+        print("first run, save state only")
+        save_new(new_hash)
         return
 
-    if md5 != old_md5:
-        save(md5)
-        push(
-            "🆕 Alpha123 空投更新",
-            f"检测到页面变化\n\n👉 {URL}"
+    if old["hash"] != new_hash:
+        print("CHANGE DETECTED!")
+
+        notify.send_push(
+            "Alpha123 空投更新",
+            "检测到页面内容变化，请立即查看：https://alpha123.uk/zh/"
         )
-        print("发现更新，已推送")
+
+        save_new(new_hash)
     else:
-        print("无变化")
+        print("no change")
 
 
 if __name__ == "__main__":
