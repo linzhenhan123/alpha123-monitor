@@ -13,7 +13,7 @@ def send_push(title, content):
     }
 
     try:
-        r = requests.post(url, json=data, timeout=10)
+        r = requests.post(url, data=data, timeout=10)
         print("Push status:", r.status_code)
         print("Push response:", r.text)
     except Exception as e:
