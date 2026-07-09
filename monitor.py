@@ -4,7 +4,7 @@ import notify
 import os
 
 URL = "https://alpha123.uk/zh/"
-STATE_FILE = "/tmp/state.txt"
+STATE_FILE = "state.txt"
 
 def get_content():
     r = requests.get(URL, timeout=10)
